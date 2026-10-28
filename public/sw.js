@@ -1,9 +1,9 @@
-const CACHE="peso-offline-be1645834fea7482";
+const CACHE="peso-offline-617c6c216c526662";
 const FILES=["/offline-app/peso-BOU2YW5P.js","/offline-app/peso-KNXUJ4FG.css","/offline-app/index.html","/icon-192.png","/icon-512.png","/manifest.webmanifest","/fonts/dm-sans.woff2","/fonts/manrope.woff2"];
 const APP='/offline-app/index.html';
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  // A failed update must not replace the working offline shell.
- try{const cache=await caches.open(CACHE);await Promise.all(FILES.map(async url=>{const request=new Request(url,{cache:'reload',credentials:'same-origin'}),response=await fetch(request);const type=response.headers.get('Content-Type')||'';if(!response.ok||response.redirected||(url.endsWith('.js')&&!/javascript/.test(type))||(url.endsWith('.css')&&!/text\/css/.test(type))||(url.endsWith('.png')&&!/image\/png/.test(type))||(url.endsWith('.woff2')&&!/font\/woff2|application\/octet-stream/.test(type))||(url.endsWith('.webmanifest')&&!/json/.test(type)))throw Error('Offline asset unavailable: '+url);if(url===APP&&!(await response.clone().text()).includes('peso-offline-shell'))throw Error('Offline shell unavailable.');await cache.put(request,response);}));await self.skipWaiting();}
+ try{const cache=await caches.open(CACHE);await Promise.all(FILES.map(async url=>{const request=new Request(url,{cache:'reload',credentials:'same-origin'}),response=await fetch(request);const type=response.headers.get('Content-Type')||'';const canonicalShell=url===APP&&response.redirected&&new URL(response.url).origin===self.location.origin&&new URL(response.url).pathname==='/offline-app/';if(!response.ok||(response.redirected&&!canonicalShell)||(url.endsWith('.js')&&!/javascript/.test(type))||(url.endsWith('.css')&&!/text\/css/.test(type))||(url.endsWith('.png')&&!/image\/png/.test(type))||(url.endsWith('.woff2')&&!/font\/woff2|application\/octet-stream/.test(type))||(url.endsWith('.webmanifest')&&!/json/.test(type)))throw Error('Offline asset unavailable: '+url);if(url===APP&&!(await response.clone().text()).includes('peso-offline-shell'))throw Error('Offline shell unavailable.');await cache.put(request,response);}));await self.skipWaiting();}
  catch(error){await caches.delete(CACHE);throw error;}
 })()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{
