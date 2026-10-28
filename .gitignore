@@ -43,3 +43,6 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
+
+# Generated offline shell (rebuilt before dev and production)
+/public/offline-app/

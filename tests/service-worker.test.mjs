@@ -1,0 +1,19 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+function worker(fail=false){const handlers={},stores=new Map(),files=['/offline-app/index.html','/offline-app/app.js','/offline-app/app.css','/fonts/test.woff2'];let activated=false;
+ const cache=key=>{if(!stores.has(key))stores.set(key,new Map());const m=stores.get(key);return {put:async(req,res)=>m.set(typeof req==='string'?req:new URL(req.url).pathname,res),match:async(req,options)=>typeof req!=='string'&&req.mode==='cors'&&!options?.ignoreVary?undefined:m.get(typeof req==='string'?req:new URL(req.url).pathname)};};
+ const caches={open:async key=>cache(key),delete:async key=>stores.delete(key),match:async req=>{for(const key of stores.keys()){const value=await cache(key).match(req);if(value)return value;}}};
+ const self={location:{origin:'https://peso.test'},addEventListener:(type,fn)=>{handlers[type]=fn;},skipWaiting:async()=>{activated=true;},clients:{claim:async()=>{}}};
+ class RelativeRequest extends Request{constructor(url,options){super(new URL(url,'https://peso.test'),options);}}
+ const fetch=async req=>{const path=new URL(req.url).pathname;const html=path.endsWith('.html')||fail&&path.endsWith('.js');return new Response(html?'<!doctype html><meta name="peso-offline-shell" content="1">':'asset',{headers:{'Content-Type':html?'text/html':path.endsWith('.js')?'application/javascript':path.endsWith('.css')?'text/css':'font/woff2'}});};
+ const template=readFileSync(new URL('../scripts/service-worker.template.js',import.meta.url),'utf8').replace('__CACHE_VERSION__','"peso-test"').replace('__PRECACHE_FILES__',JSON.stringify(files));vm.runInNewContext(template,{self,caches,fetch,Request:RelativeRequest,URL,Promise,Error});
+ return {handlers,caches,stores,files,active:()=>activated,async install(){let promise;handlers.install({waitUntil:p=>{promise=p;}});await promise;}};
+}
+test('offline shell is activated only after every required asset is cached',async()=>{const w=worker();await w.install();assert.equal(w.active(),true);assert.equal(w.stores.get('peso-test').size,w.files.length);let response;const port={postMessage:value=>{response=value;}};let task;w.handlers.message({data:{type:'CHECK_OFFLINE_READY'},ports:[port],waitUntil:p=>{task=p;}});await task;assert.equal(response.ready,true);});
+test('a login page returned for a script rejects the update instead of poisoning its cache',async()=>{const w=worker(true);await assert.rejects(()=>w.install(),/asset unavailable/);assert.equal(w.active(),false);assert.equal(w.stores.has('peso-test'),false);});
+test('navigation can reopen from the cached identity-neutral shell',async()=>{const w=worker();await w.install();let response;w.handlers.fetch({request:{method:'GET',url:'https://peso.test/',mode:'navigate'},respondWith:p=>{response=p;}});const res=await response;assert((await res.text()).includes('peso-offline-shell'));});
+test('financial API and authentication requests never use the offline cache',async()=>{const w=worker();await w.install();for(const path of ['/api/workspace','/signin-with-chatgpt','/signout-with-chatgpt','/callback']){let intercepted=false;w.handlers.fetch({request:{method:'GET',url:'https://peso.test'+path,mode:'navigate'},respondWith:()=>{intercepted=true;}});assert.equal(intercepted,false,path);}});
+test('activation preserves previous assets needed by already-open tabs',async()=>{const w=worker();await w.caches.open('peso-previous');await w.install();let task;w.handlers.activate({waitUntil:p=>{task=p;}});await task;assert(w.stores.has('peso-previous'));});
+test('a static script remains available when its module request varies by Origin',async()=>{const w=worker();await w.install();let response;w.handlers.fetch({request:{method:'GET',url:'https://peso.test/offline-app/app.js',mode:'cors'},respondWith:p=>{response=p;}});assert.equal(await (await response).text(),'asset');});

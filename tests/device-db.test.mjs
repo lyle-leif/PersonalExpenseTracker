@@ -1,0 +1,21 @@
+import 'fake-indexeddb/auto';
+import {IDBObjectStore} from 'fake-indexeddb';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initialData,backup,parseBackup} from '../app/model.mjs';
+import {acceptRemote,readDevice,saveOnDevice,mutateDevice,mergeRemote,clearDevice,pendingSignOut} from '../app/offline-db.mjs';
+import {deviceBackup} from '../app/sync-core.mjs';
+const remote=(ownerId='alice')=>({ownerId,name:ownerId,data:initialData(),version:0,appliedIds:[]});
+const purchase=id=>({id,type:'expense',amount:12345,date:'2026-10-28',accountId:'cash',notes:'Device test',allocations:[{space:'personal',categoryId:'cat0',amount:12345}]});
+test('device persistence and transaction integrity',async t=>{
+ await t.test('a confirmed device save survives rereading and contains its queued action',async()=>{await acceptRemote(remote(),'Alice');await saveOnDevice('alice','putTransaction',purchase('purchase'),'request-1');const s=await readDevice('alice');assert.equal(s.data.transactions.length,1);assert.equal(s.queue.length,1);assert.equal(s.queue[0].command.id,'request-1');});
+ await t.test('invalid writes abort both the state change and the queue append',async()=>{const before=await readDevice('alice');await assert.rejects(()=>saveOnDevice('alice','putTransaction',{...purchase('bad'),amount:1},'bad'));assert.deepEqual(await readDevice('alice'),before);});
+ await t.test('simulated storage exhaustion never reports a successful save or partial queue',async()=>{const before=await readDevice('alice'),original=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){throw new DOMException('Quota exceeded','QuotaExceededError');};try{await assert.rejects(()=>saveOnDevice('alice','putTransaction',purchase('quota'),'quota'),/storage is full/);}finally{IDBObjectStore.prototype.put=original;}assert.deepEqual(await readDevice('alice'),before);});
+ await t.test('a transaction abort leaves the previously committed workspace untouched',async()=>{const before=await readDevice('alice');await assert.rejects(()=>mutateDevice('alice',row=>{row.data.businessName='Must not persist';throw Error('Interrupted write');}),/Interrupted write/);assert.deepEqual(await readDevice('alice'),before);});
+ await t.test('concurrent tabs append changes without losing either entry',async()=>{await Promise.all([saveOnDevice('alice','putTransaction',purchase('tab-a'),'tab-a'),saveOnDevice('alice','putTransaction',purchase('tab-b'),'tab-b')]);const s=await readDevice('alice');assert.equal(s.data.transactions.length,3);assert.equal(s.queue.length,3);});
+ await t.test('a stale cloud response preserves all pending records',async()=>{await mergeRemote('alice',remote());const s=await readDevice('alice');assert.equal(s.data.transactions.length,3);assert.equal(s.queue.length,3);});
+ await t.test('switching owners never mixes local records or pending queues',async()=>{await acceptRemote(remote('bob'),'Bob');assert.equal((await readDevice()).ownerId,'bob');assert.equal((await readDevice('bob')).queue.length,0);assert.equal((await readDevice('alice')).queue.length,3);await assert.rejects(()=>mergeRemote('alice',remote('bob')),/account/);});
+ await t.test('offline backups include unacknowledged saved records and queued recovery actions',async()=>{const s=await readDevice('alice'),file=deviceBackup(s),restored=parseBackup(JSON.stringify(file));assert.equal(restored.transactions.length,3);assert.equal(restored.transactions[0].amount,12345);assert.equal(file.deviceRecovery.pendingActions.length,3);assert.equal(file.deviceRecovery.pendingActions[0].command.id,'request-1');assert.equal(file.deviceRecovery.cloudData.transactions.length,0);});
+ await t.test('sign-out without explicit discard preserves all unsynced work',async()=>{await assert.rejects(()=>clearDevice(false),/Pending changes/);assert.equal((await readDevice('alice')).queue.length,3);assert.equal((await readDevice('bob')).queue.length,0);});
+ await t.test('explicit discard clears every owner and retains only a pending cloud sign-out marker',async()=>{await clearDevice(true);assert.equal(await readDevice('alice'),null);assert.equal(await readDevice('bob'),null);assert.equal(await readDevice(),null);assert.equal(await pendingSignOut(),true);await pendingSignOut(true);assert.equal(await pendingSignOut(),false);});
+});

@@ -36,7 +36,7 @@ Local authentication is simulated only by the development starter. It is exclude
 
 This working implementation uses the existing owner-private Sites project and its D1 binding. No paid service, bank API, SMS service, custom domain, or subscription was enabled. The earlier proposed new Supabase organization was not visible to the connected account, so no Supabase project or Google OAuth client was created. The pure model and storage boundary are separate for a future backend migration.
 
-The PWA manifest and generated PNG icons allow home-screen installation in supporting browsers. The service worker caches only the generic offline page, icons and manifest. It deliberately never caches private pages, authentication routes, financial API responses or records. Reconnect to read and save financial data.
+The PWA manifest and PNG icons allow home-screen installation in supporting browsers. After online setup, IndexedDB stores owner-scoped records and pending changes on the device; a cached identity-neutral shell supports offline reopening. Authentication routes, private server-rendered pages, and financial API responses are never put in the service-worker cache. Changes sync when the app is open and connectivity returns.
 
 ## Limits
 
@@ -47,3 +47,21 @@ Browser QA covered desktop and phone layouts, transaction entry/editing, split s
 ## Later
 
 Refine UI/UX and add a mascot. Inventory, payroll, tax filing, bank sync, team access, app-store distribution, automated recurring entries and push notifications remain outside this release.
+
+## Offline use and synchronization (October 2026 update)
+
+After the first authenticated online load, the app saves an owner-scoped workspace in IndexedDB and prepares an identity-neutral static shell. The Ready for offline use status is shown only after the service worker verifies every required cached asset and a device workspace exists. Fonts are bundled locally with their OFL licenses.
+
+All normal saves first commit the optimistic workspace and queued command in one IndexedDB transaction. The UI confirms success only after transaction completion. Outbox commands use stable record IDs, stable action IDs, and before-values for affected records and financial dependencies. This includes before-values from the moment an edit form opened, so a refresh underneath an open form cannot silently overwrite a newer cloud edit.
+
+A Web Lock elects one sync leader across tabs. Each sync authenticates the workspace owner, reads the current cloud revision, removes already-acknowledged actions, and replays the queue in order. Unrelated changes merge; record, payment, and refund conflicts remain saved for review. The API checks required expected values, model validation, ownership, idempotency and atomic D1 revision changes. Legacy clients retain strict revision checks. No database schema migration or production data reset is required.
+
+IndexedDB stores local financial data without an app passphrase, as requested. Anyone with access to the unlocked phone/browser can access it. Browser storage can be cleared or evicted; the storage-protection request is optional, and JSON backups remain important. Full backups include unsynced records plus recovery metadata for pending commands and conflicts. Normal restoration restores the consistent saved records, requires online access and no pending local changes, and does not blindly replay archived conflicting commands. Keep the original recovery file if unresolved intents need further review.
+
+Sign-out waits for the sync leader, blocks on pending work unless the user explicitly discards it, clears local financial data, and finishes cloud sign-out through the platform-owned route. Offline sign-out retains only a non-financial marker so cloud sign-out can complete when connectivity returns. Account-specific queues never sync under another identity.
+
+The service worker never caches API responses, authenticated server-rendered pages, or auth routes. Its static shell has no owner identity or financial records. Failed asset downloads or a login page in place of a script reject an update. Immutable older assets remain available for already-open tabs. The offline build includes the service-worker source in the cache fingerprint.
+
+Limits: the existing 5 MB stored cloud workspace and 20,000-transaction limits remain. API requests allow up to 12 MB to accommodate before-values alongside a change; imported JSON backup files allow up to 20 MB. Storage failure leaves the old state and queue intact and does not claim a successful save.
+
+Verification for this update: 60 automated tests cover the model, owner isolation, compare-and-swap writes, IndexedDB rollback/quota failure, concurrent tab saves, queue recovery, stale open forms, duplicate acknowledgements, conflicts, and service-worker caching/privacy. Local browser QA reopened the app with its server stopped, saved a PHP 321.09 expense, reloaded while disconnected, and verified exactly one transaction after reconnection. Browser conflict review displayed both local and cloud edits and successfully preserved the cloud choice. Physical phone restart/airplane-mode testing remains a device acceptance check.

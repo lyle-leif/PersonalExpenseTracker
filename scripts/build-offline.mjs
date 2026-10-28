@@ -1,0 +1,14 @@
+import {build} from 'esbuild';
+import {readFileSync,writeFileSync,mkdirSync,readdirSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+mkdirSync('public/offline-app',{recursive:true});
+const result=await build({entryPoints:['app/offline-entry.tsx'],outdir:'public/offline-app',entryNames:'peso-[hash]',bundle:true,minify:true,format:'esm',platform:'browser',target:['es2022'],jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'},external:['/fonts/*'],metafile:true});
+const outputs=Object.keys(result.metafile.outputs),js=outputs.find(x=>x.endsWith('.js')),css=outputs.find(x=>x.endsWith('.css'));if(!js||!css)throw Error('Offline assets missing.');
+const path=x=>'/'+x.replaceAll('\\','/').replace(/^public\//,'');
+const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="peso-offline-shell" content="1"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#38674e"><meta name="apple-mobile-web-app-capable" content="yes"><title>Peso — Personal & Business</title><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon-192.png"><link rel="apple-touch-icon" href="/icon-192.png"><link rel="stylesheet" href="${path(css)}"><script type="module" src="${path(js)}"></script></head><body><div id="peso-root"></div><noscript>Peso needs JavaScript to save and open your offline records.</noscript></body></html>`;
+writeFileSync('public/offline-app/index.html',html);
+const files=[...outputs.map(path),'/offline-app/index.html','/icon-192.png','/icon-512.png','/manifest.webmanifest',...readdirSync('public/fonts').filter(f=>f.endsWith('.woff2')).map(f=>'/fonts/'+f)];
+const template=readFileSync('scripts/service-worker.template.js','utf8');
+const digest=createHash('sha256').update(template);for(const file of files)digest.update(readFileSync('public'+file));const version=digest.digest('hex').slice(0,16);
+writeFileSync('public/sw.js',template.replace('__CACHE_VERSION__',JSON.stringify('peso-offline-'+version)).replace('__PRECACHE_FILES__',JSON.stringify(files)));
+console.log('Offline shell built: '+version+' ('+files.length+' assets).');
