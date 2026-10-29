@@ -1,0 +1,11 @@
+import { build } from 'esbuild';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { copyFile, mkdir } from 'node:fs/promises';
+const destination = process.argv[2];
+if (!destination) throw Error('Pass the local review directory as the first argument.');
+await build({ entryPoints: [fileURLToPath(new URL('../app/fx-browser-entry.mjs', import.meta.url))], outfile: path.resolve(destination, 'fx-browser.js'), bundle: true, format: 'iife', platform: 'browser', target: ['es2022'], minify: true });
+await mkdir(path.resolve(destination, 'shared'), { recursive: true });
+for (const file of ['fx-core.mjs', 'fx-service.mjs']) await copyFile(new URL('../app/' + file, import.meta.url), path.resolve(destination, 'shared', file));
+await copyFile(new URL('../drizzle/0001_reference_fx.sql', import.meta.url), path.resolve(destination, 'shared', 'reference-schema.sql'));
+console.log('Built shared converter modules for the local review.');
