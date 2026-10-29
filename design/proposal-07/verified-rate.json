@@ -1,0 +1,9 @@
+{
+  "base": "CAD",
+  "quote": "PHP",
+  "provider": "ECB",
+  "source": "Frankfurter/ECB",
+  "rate": "45.556",
+  "publicationDate": "2026-10-28",
+  "checkedAt": "2026-10-29T11:49:29.671Z"
+}

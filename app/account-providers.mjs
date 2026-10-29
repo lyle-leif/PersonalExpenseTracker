@@ -40,6 +40,7 @@ export function searchAccountProviders(region = 'ALL', query = '') {
   return ACCOUNT_PROVIDERS.filter(item => (region === 'ALL' || item.region === region || item.region === 'OTHER') && words.every(word => normalize([item.name, item.id, ...item.aliases].join(' ')).includes(word)));
 }
 export function validateAccountAppearance(account) {
+  if(account.balanceLocked!==undefined&&typeof account.balanceLocked!=='boolean')throw Error('Invalid balance privacy setting.');
   if (account.providerId != null && (typeof account.providerId !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(account.providerId))) throw Error('Invalid account provider.');
   if (account.cardStyleId != null && (typeof account.cardStyleId !== 'string' || !/^[a-z][a-z0-9-]{0,79}$/.test(account.cardStyleId))) throw Error('Invalid account card style.');
   if (account.bankSubtype != null && (account.kind !== 'bank' || !['chequing', 'savings', 'other'].includes(account.bankSubtype))) throw Error('Choose a valid bank-account subtype.');

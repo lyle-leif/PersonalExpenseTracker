@@ -66,9 +66,9 @@ export function applyCommand(data,command) {
 export function exportCSV(rows,data,space='all') {
   const safe=v=>'"'+String(v??'').replace(/^[=+@\-\t\r]/,"'$&").replaceAll('"','""')+'"';
   const lines=[['Date','Type','Account','To account','Space','Category','Amount (PHP)','Notes','Bill ID'],...rows.flatMap(t=>(t.allocations?.length?t.allocations.filter(a=>space==='all'||a.space===space):[{space:'',categoryId:'',amount:t.amount}]).map(a=>[t.date,t.type,data.accounts.find(x=>x.id===t.accountId)?.name||'',data.accounts.find(x=>x.id===t.toAccountId)?.name||'',a.space,data.categories.find(c=>c.id===a.categoryId)?.name||'',(a.amount/100).toFixed(2),t.notes,t.billId||'']))];
-  const appearanceHeaders=['Account provider','Account card style','Account bank subtype','To account provider','To account card style','To account bank subtype'];
+  const appearanceHeaders=['Account provider','Account card style','Account bank subtype','To account provider','To account card style','To account bank subtype','Account balance locked','To account balance locked'];
   lines[0].push(...appearanceHeaders);
-  let rowIndex=1;for(const t of rows){const count=t.allocations?.length?t.allocations.filter(a=>space==='all'||a.space===space).length:1;const from=data.accounts.find(a=>a.id===t.accountId),to=data.accounts.find(a=>a.id===t.toAccountId);const values=[from?.providerId,from?.cardStyleId,from?.bankSubtype,to?.providerId,to?.cardStyleId,to?.bankSubtype];for(let i=0;i<count;i++)lines[rowIndex++].push(...values);}
+  let rowIndex=1;for(const t of rows){const count=t.allocations?.length?t.allocations.filter(a=>space==='all'||a.space===space).length:1;const from=data.accounts.find(a=>a.id===t.accountId),to=data.accounts.find(a=>a.id===t.toAccountId);const values=[from?.providerId,from?.cardStyleId,from?.bankSubtype,to?.providerId,to?.cardStyleId,to?.bankSubtype,from?from.balanceLocked===true:'',to?to.balanceLocked===true:''];for(let i=0;i<count;i++)lines[rowIndex++].push(...values);}
   return '\uFEFF'+lines.map(r=>r.map(safe).join(',')).join('\r\n');
 }
 export function backup(data){return {app:'Peso',schemaVersion:VERSION,exportedAt:new Date().toISOString(),data};}
