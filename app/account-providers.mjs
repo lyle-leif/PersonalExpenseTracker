@@ -1,3 +1,5 @@
+import {cardDesign} from './card-designs.mjs';
+export {CARD_DESIGNS,cardDesign,designsForAccount,referenceDesign,withCardDesign} from './card-designs.mjs';
 // Presentation metadata only. Provider selection never determines account kind or currency.
 const provider = (id, name, region, background, accent, aliases = []) => Object.freeze({ id, name, region, background, accent, foreground: '#ffffff', aliases });
 export const ACCOUNT_PROVIDERS = Object.freeze([
@@ -49,7 +51,7 @@ export function providerCardStyle(providerId, kind) {
 }
 export function withProviderAppearance(account, providerId) {
   if (!ACCOUNT_PROVIDERS.some(item => item.id === providerId)) throw Error('Choose an available provider.');
-  return validateAccountAppearance({ ...structuredClone(account), providerId, cardStyleId: providerCardStyle(providerId, account.kind) });
+  return validateAccountAppearance({ ...structuredClone(account), providerId, cardStyleId: account.providerId===providerId&&account.cardStyleId?account.cardStyleId:providerCardStyle(providerId, account.kind) });
 }
 export function accountTypeLabel(account) {
   if (account.kind === 'bank') return account.bankSubtype === 'chequing' ? 'Chequing' : account.bankSubtype === 'savings' ? 'Savings' : 'Bank / debit';
@@ -57,7 +59,7 @@ export function accountTypeLabel(account) {
 }
 export function accountCardPresentation(account) {
   const known = ACCOUNT_PROVIDERS.find(item => item.id === account.providerId);
-  const styles = known ? [known.id + '-balance', known.id + '-credit'] : [];
-  const neutral = !known || (account.cardStyleId != null && !styles.includes(account.cardStyleId));
-  return { provider: known || accountProvider('other'), styleId: neutral ? 'neutral' : account.cardStyleId || providerCardStyle(known.id, account.kind), background: neutral ? '#344c43' : known.background, accent: neutral ? '#b9d6c9' : known.accent, foreground: '#ffffff', typeLabel: accountTypeLabel(account) };
+  const design=cardDesign(account.cardStyleId||providerCardStyle(account.providerId,account.kind));
+  const neutral=!known||!design||design.providerId!==account.providerId||design.role!==(account.kind==='credit'?'credit':'balance');
+  return { provider: known || accountProvider('other'), styleId: neutral ? 'neutral' : design.id, design:neutral?null:design, background: neutral ? '#344c43' : design.background, accent: neutral ? '#b9d6c9' : design.accent, foreground: '#ffffff', typeLabel: accountTypeLabel(account) };
 }

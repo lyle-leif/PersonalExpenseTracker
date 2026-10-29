@@ -1,0 +1,6 @@
+import {CARD_DESIGNS} from '../app/card-designs.mjs';
+import {mkdir,writeFile} from 'node:fs/promises';
+const root=new URL('../../../outputs/monix-card-references/',import.meta.url);await mkdir(root,{recursive:true});
+const rows=CARD_DESIGNS.filter(d=>d.referenceKind==='product'),results=[];
+for(let start=0;start<rows.length;start+=6){await Promise.all(rows.slice(start,start+6).map(async d=>{try{const r=await fetch(d.sourceUrl,{signal:AbortSignal.timeout(18000)}),html=r.headers.get('content-type')?.includes('text/html')?await r.text():'';const title=html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g,' ').trim();results.push({id:d.id,name:d.name,url:d.sourceUrl,status:r.status,title,checkedAt:new Date().toISOString()});if(['cibc','td','scotiabank','rbc','bmo','bpi','maribank'].includes(d.providerId)&&html){const tags=(html.match(/<img\b[^>]*>/g)||[]).filter(t=>/card|dividend|cashback|debit|rewards/i.test(t));await writeFile(new URL(d.id+'.json',root),JSON.stringify(tags,null,2));}}catch(error){results.push({id:d.id,url:d.sourceUrl,status:'unavailable',reason:error.name});}}));}
+await writeFile(new URL('reference-checks.json',root),JSON.stringify(results,null,2));console.log(JSON.stringify(results.map(({id,status,title})=>({id,status,title})),null,2));

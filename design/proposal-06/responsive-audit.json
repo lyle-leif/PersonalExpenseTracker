@@ -1,0 +1,147 @@
+{
+  "screens": [
+    {
+      "size": "320",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 320
+    },
+    {
+      "size": "320",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 320
+    },
+    {
+      "size": "375",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 375
+    },
+    {
+      "size": "375",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 375
+    },
+    {
+      "size": "393",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 393
+    },
+    {
+      "size": "393",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 393
+    },
+    {
+      "size": "430",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 430
+    },
+    {
+      "size": "430",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 430
+    },
+    {
+      "size": "440",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 440
+    },
+    {
+      "size": "440",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 440
+    },
+    {
+      "size": "768",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 768
+    },
+    {
+      "size": "768",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 768
+    },
+    {
+      "size": "1024",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 1024
+    },
+    {
+      "size": "1024",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 1024
+    },
+    {
+      "size": "1440",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 1440
+    },
+    {
+      "size": "1440",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 1440
+    },
+    {
+      "size": "landscape",
+      "theme": "light",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 956
+    },
+    {
+      "size": "landscape",
+      "theme": "dark",
+      "clippedText": [],
+      "pageOverflow": false,
+      "width": 956
+    }
+  ],
+  "enlargedGallery": [
+    {
+      "kind": "bank",
+      "cards": 28,
+      "clipped": []
+    },
+    {
+      "kind": "credit",
+      "cards": 28,
+      "clipped": []
+    },
+    {
+      "kind": "ewallet",
+      "cards": 3,
+      "clipped": []
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import {ACCOUNT_PROVIDERS,searchAccountProviders,withProviderAppearance,accountC
 import {initialData,validateData,backup,parseBackup,exportCSV,applyCommand,accountBalance,summary} from '../app/model.mjs';
 import {acceptRemote,saveOnDevice,readDevice,clearDevice} from '../app/offline-db.mjs';
 import {reconcile} from '../app/sync-core.mjs';
+import {CARD_DESIGNS,cardDesign,designsForAccount,referenceDesign,withCardDesign} from '../app/card-designs.mjs';
 test('Canadian library leads with five banks and searches aliases across regions',()=>{
  assert.deepEqual(ACCOUNT_PROVIDERS.slice(0,5).map(p=>p.id),['cibc','td','scotiabank','rbc','bmo']);
  assert.equal(new Set(ACCOUNT_PROVIDERS.map(p=>p.id)).size,ACCOUNT_PROVIDERS.length);
@@ -61,4 +62,41 @@ test('Provider edits persist with the offline action, rebase, and acknowledge wi
  const acknowledged=reconcile(rebased,{ownerId,data:rebased.data,version:2,appliedIds:['appearance-action']});
  assert.equal(acknowledged.queue.length,0);assert.equal(acknowledged.data.accounts[1].cardStyleId,'cibc-balance');
  assert.deepEqual(parseBackup(JSON.stringify(backup(saved.data))).accounts[1],changed);await clearDevice(ownerId);
+});
+test('Every provider and account role has deliberate artwork, stable IDs and labeled references',()=>{
+ assert.equal(new Set(CARD_DESIGNS.map(d=>d.id)).size,CARD_DESIGNS.length);
+ for(const p of ACCOUNT_PROVIDERS)for(const kind of ['bank','credit','ewallet','cash']){
+  const choices=designsForAccount(p.id,kind);assert(choices.length);assert(choices.some(d=>d.referenceKind==='original'));
+  for(const d of choices){assert.match(d.id,/^[a-z][a-z0-9-]{0,79}$/);assert(d.pattern&&d.background&&d.accent);assert.equal(d.reviewedAt,'2026-10-29');if(d.referenceKind==='product')assert.match(d.sourceUrl,/^https:\/\//);else assert.equal(d.sourceUrl,null);}
+ }
+ assert.equal(referenceDesign('amexcanada','bank').referenceKind,'original');
+ assert.equal(referenceDesign('eqbank','credit').referenceKind,'original');
+ assert.equal(referenceDesign('maribank','credit').referenceKind,'product');
+});
+test('All design selections preserve financial data and round-trip through model, backup and CSV',()=>{
+ for(const d of CARD_DESIGNS){const kind=d.role==='credit'?'credit':'bank';const account={id:'bank',name:'Unchanged account',kind,opening:kind==='credit'?-58235:-98235,limit:900000,closingDay:20,dueDay:5,currency:'CAD',providerId:d.providerId};
+  const styled=withCardDesign(account,d.id);const {cardStyleId,...rest}=styled;assert.deepEqual(rest,account);assert.equal(cardStyleId,d.id);
+  const data=initialData();data.accounts[1]=account;const result=applyCommand(data,{id:'design-update',type:'putAccount',value:styled});
+  assert.deepEqual(summary(data,'2026-10'),summary(result,'2026-10'));assert.equal(accountBalance(account,[]),accountBalance(styled,[]));
+  assert.equal(parseBackup(JSON.stringify(backup(result))).accounts[1].cardStyleId,d.id);
+  assert.equal(accountCardPresentation(styled).design.id,d.id);
+  assert.match(exportCSV([{date:'2026-10-29',type:'transfer',accountId:'cash',toAccountId:'bank',amount:12345,notes:'',allocations:[]}],result),new RegExp(d.id));
+ }
+});
+test('Mismatched designs are rejected; provider rereads and future safe styles are preserved',()=>{
+ const a=withProviderAppearance({id:'one',kind:'credit',opening:-12345,name:'Same',currency:'CAD'},'cibc'),styled=withCardDesign(a,referenceDesign('cibc','credit').id);
+ assert.deepEqual(withProviderAppearance(styled,'cibc'),styled);
+ assert.throws(()=>withCardDesign(styled,referenceDesign('td','credit').id),/compatible/);
+ assert.throws(()=>withCardDesign(styled,referenceDesign('cibc','bank').id),/compatible/);
+ assert.throws(()=>withCardDesign(styled,'nonexistent'),/compatible/);
+ const future={...a,cardStyleId:'future-safe-design'};assert.deepEqual(withProviderAppearance(future,'cibc'),future);assert.equal(accountCardPresentation(future).styleId,'neutral');
+ assert.equal(cardDesign('nonexistent'),null);
+});
+test('Detailed style persists through offline queue, cloud acknowledgement and independent owners',async()=>{
+ const ownerId='artwork-owner',data=initialData();data.accounts[1]=withProviderAppearance({...data.accounts[1],opening:345678},'bmo');
+ await acceptRemote({ownerId,data,version:0,appliedIds:[]},'Test');
+ const styled=withCardDesign(data.accounts[1],referenceDesign('bmo','bank').id);await saveOnDevice(ownerId,'putAccount',styled,'artwork-action');
+ const s=await readDevice(ownerId);assert.equal(s.queue[0].command.value.cardStyleId,styled.cardStyleId);assert.equal(s.data.accounts[1].opening,345678);
+ const done=reconcile(s,{ownerId,data:s.data,version:1,appliedIds:['artwork-action']});assert.equal(done.queue.length,0);assert.deepEqual(done.data.accounts[1],styled);
+ assert.throws(()=>reconcile(s,{ownerId:'other-owner',data:s.data,version:1,appliedIds:[]}),/account/);await clearDevice(ownerId);
 });

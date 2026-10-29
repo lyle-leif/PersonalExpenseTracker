@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cibc",
+    "source": "https://www.cibc.com/content/dam/global-assets/logos/cibc-logos/no-tagline/cibc-logo-colour-142x36.svg",
+    "file": "assets/brands/cibc-official.svg",
+    "sha256": "bac21b84830794126ed00b06b05725b4d37e39ad51ac260871706b1d66f11993"
+  },
+  {
+    "id": "td",
+    "source": "https://www.td.com/content/dam/tdct/images/navigation-header-and-footer/td-logo-desktop.png",
+    "file": "assets/brands/td-official.png",
+    "sha256": "65bc536eeffc16faaea22b52980471f0febc6b3edc056b17dd9282a0b78e5379"
+  },
+  {
+    "id": "scotiabank",
+    "source": "https://www.scotiabank.com/content/dam/scotiabank/images/logos/2019/scotiabank-logo-red-desktop-200px.svg",
+    "file": "assets/brands/scotiabank-official.svg",
+    "sha256": "87377846365e879595a7912be60a6998e56d8eb64e6f2c978a4a6e34e7532d6a"
+  },
+  {
+    "id": "rbc",
+    "source": "https://www.rbcroyalbank.com/dvl/assets/images/logos/rbc-logo-shield.svg",
+    "file": "assets/brands/rbc-official.svg",
+    "sha256": "96b1108b1d9a23174052f3417f90560e8003483a8be17c6dad05924151eba199"
+  },
+  {
+    "id": "bmo",
+    "source": "https://www.bmo.com/dam_asset/asset/9388c217-ca0f-4fbc-90bf-12547e7930e7/bmo-blue-on-transparent-en.svg",
+    "file": "assets/brands/bmo-official.svg",
+    "sha256": "da3dc7a279a3f9e10d0beb1f4f0fc4f61cbe517b3bef7954bb1a9412cd242edf"
+  }
+]
