@@ -1,0 +1,28 @@
+/* Sample-only public preview. No cloud account or financial API exists here. */
+let phoneCacheLabel='Preparing offline preview…';
+function phoneOfflineInfo(){return `<section class="phone-info"><h2>Monix Preview</h2><p>Sample data only. Accounts, pictures, preferences, and your test PIN stay in this browser. No real bank connection or cloud sync.</p><p data-phone-cache role="status">${escapeText(phoneCacheLabel)}</p><button class="button-secondary" data-phone="install">Install & testing guide</button></section>`;}
+syncPage=function(){return `${heading('Your phone preview','Sample data, saved only on this device.')}${phoneOfflineInfo()}<p class="footnote">Browser storage can be cleared or evicted. Use disposable sample information. Device unlock is a labeled simulation; real Face ID and financial sync follow integration.</p>`;};
+const phoneSettings=settings;settings=function(){return phoneOfflineInfo()+phoneSettings();};
+const phoneOverlay=overlayView;
+overlayView=function(){if(overlay!=='phone-install')return phoneOverlay();return `<section class="screen-overlay privacy-overlay" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="overlay-panel"><header class="sheet-head"><div><h1 id="sheet-title">Try Monix on your iPhone</h1><small>Public sample-only preview</small></div><button class="icon-btn" data-action="close" aria-label="Close installation guide">${icon('close')}</button></header><div class="sheet-scroll phone-install"><p data-phone-cache role="status">${escapeText(phoneCacheLabel)}</p><ol><li>Open this link in Safari.</li><li>Tap Share, then Add to Home Screen. If prompted, keep Open as Web App enabled.</li><li>Launch Monix Preview from its icon. It opens separately from your real app.</li><li>Wait for Ready for offline preview before trying airplane mode.</li></ol><p>Test both themes, touch scrolling, card flips, PIN fallback, hiding and reopening, keyboard entry, and landscape.</p><p>Device unlock remains a clearly labeled simulation. Enter a disposable Monix test PIN, never your phone or bank PIN. Transaction forms demonstrate feedback; account setup, picture and preference changes save locally.</p><button class="button-secondary" data-phone="check-update">Check preview update</button><p id="phone-update-message" role="status"></p></div></div></section>`;};
+function phoneCacheStatus(label){phoneCacheLabel=label;document.querySelectorAll('[data-phone-cache]').forEach(el=>el.textContent=label);}
+async function phoneCheckCache(registration){
+ const worker=navigator.serviceWorker.controller||registration.active;
+ if(!worker){phoneCacheStatus('Preparing offline preview…');return;}
+ try{const result=await new Promise((resolve,reject)=>{const channel=new MessageChannel(),timer=setTimeout(()=>reject(Error('Offline preparation is taking longer. Stay online and reopen the preview.')),6000);channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();resolve(event.data);};worker.postMessage({type:'CACHE_STATUS'},[channel.port2]);});phoneCacheStatus(result.ready?'Ready for offline preview':'Offline preview is not ready. Keep this page open while connected.');}
+ catch(error){phoneCacheStatus(error.message);}
+}
+let phoneRegistration=null;
+async function phonePrepareOffline(){
+ if(!('serviceWorker' in navigator)){phoneCacheStatus('Offline preview is unavailable in this browser.');return;}
+ try{phoneRegistration=await navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'});navigator.serviceWorker.addEventListener('controllerchange',()=>void phoneCheckCache(phoneRegistration));let timer;try{await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Offline preparation timed out')),15000);})]);}finally{clearTimeout(timer);}await phoneCheckCache(phoneRegistration);void phoneRegistration.update().catch(()=>{});}
+ catch{phoneCacheStatus('Could not prepare offline preview. Stay online and reopen to retry.');}
+}
+document.addEventListener('click',async event=>{const button=event.target.closest('[data-phone]');if(!button)return;event.preventDefault();event.stopImmediatePropagation();if(button.dataset.phone==='install')showOverlay('phone-install');if(button.dataset.phone==='check-update'){const label=document.querySelector('#phone-update-message');try{await phoneRegistration?.update();label.textContent=phoneRegistration?.waiting?'An update is ready. Close all preview windows, then reopen. Local samples and PIN are retained.':'Preview update checked. Reopen while online if offline preparation is incomplete.';await phoneCheckCache(phoneRegistration);}catch{label.textContent='Could not check for an update. Your current preview and samples are retained.';}}},true);
+const phoneAppearance=applyAppearance;applyAppearance=function(){phoneAppearance();document.querySelector('meta[name="theme-color"]').setAttribute('content',document.documentElement.dataset.theme==='dark'?'#101917':'#F7FAF7');};
+// The inherited status formatter shortens the word "preview" to "Review".
+// Keep this public sample label explicit instead of suggesting a sync problem.
+const phoneRender=render;render=function(){phoneRender();const status=document.querySelector('.sync-pill');if(status){status.innerHTML='<i></i>Sample preview';status.title='Sample data · stored only on this device';}};
+applyAppearance();
+if(!window.MONIX_PRIVACY_PENDING)render();
+void phonePrepareOffline();
