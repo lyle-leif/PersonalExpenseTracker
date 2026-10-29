@@ -1,5 +1,5 @@
-const CACHE="peso-offline-2e7a35f54f76da49";
-const FILES=["/offline-app/peso-BOU2YW5P.js","/offline-app/peso-KNXUJ4FG.css","/offline-app/index.html","/icon-192.png","/icon-512.png","/manifest.webmanifest","/fonts/dm-sans.woff2","/fonts/manrope.woff2"];
+const CACHE="peso-offline-260e4effb49d4b00";
+const FILES=["/offline-app/peso-EBLBCQZ7.js","/offline-app/peso-KNXUJ4FG.css","/offline-app/index.html","/icon-192.png","/icon-512.png","/manifest.webmanifest","/fonts/dm-sans.woff2","/fonts/manrope.woff2"];
 const APP='/offline-app/index.html';
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  // A failed update must not replace the working offline shell.

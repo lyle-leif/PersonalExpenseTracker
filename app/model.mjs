@@ -1,3 +1,4 @@
+import {validateAccountAppearance} from './account-providers.mjs';
 export const VERSION = 2;
 export const money = n => new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(n/100);
 export function cents(s, signed=false) {
@@ -31,7 +32,7 @@ export function validateData(d) {
   for(const [key,max] of [['accounts',100],['categories',200],['transactions',20000],['bills',10000],['budgets',10000]]) {assert(Array.isArray(d[key])&&d[key].length<=max,'Invalid or oversized '+key+'.');if(key!=='budgets')assert(new Set(d[key].map(x=>x.id)).size===d[key].length,'Duplicate '+key+' identifiers.');}
   assert(d.accounts.length>0&&d.categories.length>0,'Keep at least one account and category.');
   const accounts=new Map(d.accounts.map(a=>[a.id,a])),cats=new Set(d.categories.map(c=>c.id)),bills=new Map(d.bills.map(b=>[b.id,b]));
-  for(const a of d.accounts){assert(validId(a.id)&&text(a.name,60)&&['cash','bank','ewallet','credit'].includes(a.kind)&&integer(a.opening,true),'Invalid account.');if(a.limit!=null)assert(integer(a.limit),'Invalid credit limit.');for(const day of [a.closingDay,a.dueDay])if(day!=null)assert(Number.isInteger(day)&&day>=1&&day<=31,'Card days must be between 1 and 31.');}
+  for(const a of d.accounts){assert(validId(a.id)&&text(a.name,60)&&['cash','bank','ewallet','credit'].includes(a.kind)&&integer(a.opening,true),'Invalid account.');validateAccountAppearance(a);if(a.limit!=null)assert(integer(a.limit),'Invalid credit limit.');for(const day of [a.closingDay,a.dueDay])if(day!=null)assert(Number.isInteger(day)&&day>=1&&day<=31,'Card days must be between 1 and 31.');}
   for(const c of d.categories)assert(validId(c.id)&&text(c.name,60),'Invalid category.');
   for(const b of d.bills){assert(validId(b.id)&&['receivable','payable'].includes(b.kind)&&text(b.party,100)&&text(b.description,300)&&integer(b.amount)&&b.amount>0&&isDate(b.issueDate)&&isDate(b.dueDate)&&b.dueDate>=b.issueDate&&cats.has(b.categoryId),'Invalid bill; check dates, category and amount.');}
   for(const t of d.transactions){
@@ -65,6 +66,9 @@ export function applyCommand(data,command) {
 export function exportCSV(rows,data,space='all') {
   const safe=v=>'"'+String(v??'').replace(/^[=+@\-\t\r]/,"'$&").replaceAll('"','""')+'"';
   const lines=[['Date','Type','Account','To account','Space','Category','Amount (PHP)','Notes','Bill ID'],...rows.flatMap(t=>(t.allocations?.length?t.allocations.filter(a=>space==='all'||a.space===space):[{space:'',categoryId:'',amount:t.amount}]).map(a=>[t.date,t.type,data.accounts.find(x=>x.id===t.accountId)?.name||'',data.accounts.find(x=>x.id===t.toAccountId)?.name||'',a.space,data.categories.find(c=>c.id===a.categoryId)?.name||'',(a.amount/100).toFixed(2),t.notes,t.billId||'']))];
+  const appearanceHeaders=['Account provider','Account card style','Account bank subtype','To account provider','To account card style','To account bank subtype'];
+  lines[0].push(...appearanceHeaders);
+  let rowIndex=1;for(const t of rows){const count=t.allocations?.length?t.allocations.filter(a=>space==='all'||a.space===space).length:1;const from=data.accounts.find(a=>a.id===t.accountId),to=data.accounts.find(a=>a.id===t.toAccountId);const values=[from?.providerId,from?.cardStyleId,from?.bankSubtype,to?.providerId,to?.cardStyleId,to?.bankSubtype];for(let i=0;i<count;i++)lines[rowIndex++].push(...values);}
   return '\uFEFF'+lines.map(r=>r.map(safe).join(',')).join('\r\n');
 }
 export function backup(data){return {app:'Peso',schemaVersion:VERSION,exportedAt:new Date().toISOString(),data};}
