@@ -24,5 +24,9 @@ const phoneAppearance=applyAppearance;applyAppearance=function(){phoneAppearance
 // Keep this public sample label explicit instead of suggesting a sync problem.
 const phoneRender=render;render=function(){phoneRender();const status=document.querySelector('.sync-pill');if(status){status.innerHTML='<i></i>Sample preview';status.title='Sample data · stored only on this device';}};
 applyAppearance();
+// iOS may shrink only the visual viewport when its keyboard is open.
+// Ignore pinch zoom so this adjustment does not fight magnification or panning.
+function phoneKeyboardViewport(){const view=window.visualViewport,editing=!!document.activeElement?.matches('input,select,textarea'),open=!!(view&&editing&&Math.abs(view.scale-1)<.05&&window.innerHeight-view.height>100),root=document.documentElement;root.classList.toggle('phone-keyboard-open',open);if(open){root.style.setProperty('--keyboard-height',view.height+'px');root.style.setProperty('--keyboard-top',view.offsetTop+'px');}else{root.style.removeProperty('--keyboard-height');root.style.removeProperty('--keyboard-top');}}
+window.visualViewport?.addEventListener('resize',phoneKeyboardViewport);window.visualViewport?.addEventListener('scroll',phoneKeyboardViewport);window.addEventListener('resize',phoneKeyboardViewport);document.addEventListener('focusin',phoneKeyboardViewport);document.addEventListener('focusout',()=>queueMicrotask(phoneKeyboardViewport));
 if(!window.MONIX_PRIVACY_PENDING)render();
 void phonePrepareOffline();
