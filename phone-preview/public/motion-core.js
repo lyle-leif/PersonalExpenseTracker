@@ -67,7 +67,10 @@ var MonixMotion = (() => {
         this.arm();
       }
     }
-    arm() {
+    interval() {
+      return this.energy === "calm" ? 18e3 + this.random() * 6e3 : 1e4 + this.random() * 5e3;
+    }
+    arm(delay = this.interval()) {
       this.clearTimer(this.timer);
       this.timer = null;
       if (!this.active) return;
@@ -78,7 +81,7 @@ var MonixMotion = (() => {
           return;
         }
         this.play(false);
-      }, this.energy === "calm" ? 18e3 + this.random() * 6e3 : 1e4 + this.random() * 5e3);
+      }, delay);
     }
     play(direct = false, requested = null) {
       if (!this.available()) return false;
@@ -90,12 +93,17 @@ var MonixMotion = (() => {
         return false;
       }
       if (this.busy) {
-        if (direct) this.onAck();
+        if (direct) {
+          this.ambientDue = this.now() + this.interval();
+          this.wordsDue = this.now() + 45e3 + this.random() * 15e3;
+          this.onAck();
+        }
         return false;
       }
       this.clearTimer(this.timer);
       this.timer = null;
       this.busy = true;
+      this.ambientDue = this.now() + this.interval();
       const gesture = requested || this.choose(REACTIONS, this.last);
       this.last = gesture;
       this.onGesture(gesture, direct);
@@ -104,7 +112,7 @@ var MonixMotion = (() => {
         this.settle = null;
         this.busy = false;
         this.onRest();
-        this.arm();
+        this.arm(Math.max(0, this.ambientDue - this.now()));
       }, duration[gesture] || 1800);
       return true;
     }

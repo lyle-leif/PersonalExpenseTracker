@@ -23,7 +23,7 @@ Run npm run build:phone-preview from the repository root to regenerate public/ f
 
 The service worker atomically caches its complete version, verifies readiness on request, normalizes the hosted canonical root without accepting redirects, excludes API/auth paths, retains previous caches during updates, and never clears IndexedDB. A waiting update activates after existing preview windows close.
 
-110 financial/offline/privacy/preview tests, TypeScript check, and production build passed before publication. Browser verification and deployed access results are documented in the task handoff. Real iPhone touch scrolling, Home Screen installation, keyboard/safe-area behavior, and airplane mode remain the user's final physical-device checks.
+121 financial/offline/privacy/preview tests, TypeScript check, and production build passed before publication. Browser verification and deployed access results are documented in the task handoff. Real iPhone touch scrolling, Home Screen installation, keyboard/safe-area behavior, and airplane mode remain the user's final physical-device checks.
 
 The existing private Peso/Monix app is unchanged. No new paid service, subscription, domain or database was enabled.
 
@@ -31,6 +31,17 @@ The existing private Peso/Monix app is unchanged. No new paid service, subscript
 
 The phone interface uses locally bundled Manrope (full character set, including the peso sign and tabular figures) from https://github.com/google/fonts/tree/main/ofl/manrope under the included OFL. Outfit SemiBold is reserved for the Monix wordmark. Earlier proposals remain unchanged.
 
-The companion has one timer controller, stable SVG layers, direct Home tap reactions, optional words, Calm/Extra playful energy, pause and reduced-motion support. It suspends during hidden windows, task sheets, focused fields and feedback messages. Profile portraits remain static. Installed safe areas belong to actual iOS, with edge-to-edge status-bar configuration and no simulated device decoration.
+The companion has one timer controller, one stable SVG rig, direct Home tap reactions, optional words, Calm/Extra playful energy and reduced-motion support. It suspends during hidden windows, task sheets, focused fields and feedback messages. Profile portraits remain static. Installed safe areas belong to actual iOS, with edge-to-edge status-bar configuration and no simulated device decoration.
 
-116 regression tests, typecheck and production build pass. Responsive checks cover 320–1440 px and phone landscape; actual iPhone installation, touch, keyboard and airplane-mode checks remain required. Close all preview windows and reopen for a waiting update. Before removing/re-adding an old icon, preserve any sample information or pictures you want to keep; browser-local samples are not backed up or synced.
+121 regression tests, typecheck and production build pass. Responsive checks cover 320–1440 px and phone landscape; actual iPhone installation, touch, keyboard and airplane-mode checks remain required. Close all preview windows and reopen for a waiting update. Before removing/re-adding an old icon, preserve any sample information or pictures you want to keep; browser-local samples are not backed up or synced.
+
+
+## Full-screen repair and continuous motion
+
+The phone build now owns header, scroll area, dock, navigation and sheet layout in phone.css; inherited container overrides are removed during generation. Backgrounds cover the viewport, safe areas are applied once to essential controls, and visual-viewport keyboard sizing is separate from app-height fallback. Installed iPhone confirmation is still required.
+
+The guide displays the current build and offers opt-in Copy layout diagnostics: only launch mode, viewport dimensions, safe-area measurements and layout bounds. A downloaded update is announced without reloading forms. Close all preview windows and reopen; no data clearing or reinstallation is required.
+
+Monix uses one articulated illustration with continuous breathing, arm settling, sprout movement and irregular blinks. Reactions animate nested joints and preserve idle motion. Pause buttons and their empty wrappers are removed. An old pause flag migrates once to continuous motion; explicit Reduced motion remains available and respects the device preference. Themes, words, energy, records, artwork, photos and PIN stores retain their identity.
+
+Verified browser widths: 320, 375, 393, 430, 440, 768, 1024, 1440, plus 852 x 393 landscape. App bounds matched viewport height; phone navigation reached the bottom edge. The waiting update activated after closing the old window, and the updated preview reopened with the local server stopped while retaining its appearance preference. Real iPhone safe areas, keyboard and Home Screen launch remain physical-device checks.
