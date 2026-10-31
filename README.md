@@ -1,4 +1,4 @@
-# Peso — Personal & Business
+# monix — Personal & Business
 
 A phone-first PHP money tracker for one owner and one business. Personal and business allocations share the same real cash, bank, e-wallet and credit-card balances.
 
